@@ -1,0 +1,4 @@
+car,automobile,3.92
+food,fruit,3.08
+journey,car,1.16
+coast,forest,0.42

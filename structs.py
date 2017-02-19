@@ -1,4 +1,4 @@
-#!/bin/bash/python3.4
+#!/bin/bash/python3.5
 
 import numpy as np
 import pdb
@@ -35,7 +35,7 @@ class expandableArray():
 		#Starting with a blank array - while elegant - would require a time-consuming consideration of edge cases
 		#The difference should not matter for this application, but be careful about porting this code to another application
 
-		self.data = np.array([[0, 0], [0, 0]])
+		self.data = np.array([[0, 0], [0, 0]], np.uint32)
 		self.rank = 2 			#Requirement and rank expressed in terms of a one-based array
 		self.requirement = 0  		#e.g., self.rank=2 corresponds to a 2x2 array
 
@@ -50,8 +50,8 @@ class expandableArray():
 		if self.requirement <= self.rank:
 			return
 		
-		leftRightZs = np.zeros((self.rank, 1), int)
-		upDownZs = np.zeros((1, self.requirement), int)
+		leftRightZs = np.zeros((self.rank, 1), np.uint32)
+		upDownZs = np.zeros((1, self.requirement), np.uint32)
 
 		self.data = np.concatenate((self.data, leftRightZs), axis=1)
 		self.data = np.concatenate((self.data, upDownZs), axis=0)

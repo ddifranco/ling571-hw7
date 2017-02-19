@@ -1,44 +1,57 @@
-#!/bin/python3.4
+#!/usr/bin/python3
 
 	# Modules & Settings
 
 import sys
-import resources
 import nltk
 import pdb
 import resources as rc
+from scipy.stats.stats import spearmanr
 
 wlen    = int(sys.argv[1])
 wscheme = sys.argv[2].upper()
 human   = open(sys.argv[3], 'r')
-output  = open(sys.argv[4], 'w')
+output  = sys.argv[4]
 
-	# Main
+			# Main
 
-with open('gettysburg.txt', 'r') as myfile:
-    speech=myfile.read().replace('\n', ' ')
-#tkns = nltk.tokenize.word_tokenize(speech)[0:33]
-tkns = nltk.tokenize.word_tokenize(speech)
-words = iter(tkns)
+punc = [',', '.', '?', '!', '$', '-', '/', '\\', '(', ')', ':', '"', '\''] 
 
-fx = rc.featureExtractor()
+words, vocabSize, corpusSize = rc.prepareSample('fbrown', punc)
+fx = rc.featureExtractor(vocabSize)
 window = list()
 
-while words.__length_hint__() > 0:
+		# Part 1: Generate Feature Matrix
 
-	word = words.__next__()
-	clean = rc.preprocess(word)
+for i, word in enumerate(words, 1):
 
-	if clean is None:
-		continue
+	if i % 10000 == 1:
+		print('Processing word {} of {}'.format(i, corpusSize))
 
-	window.append(clean)
-	fx.increment(clean)
-	print(window)
+	window.append(word)
+	fx.increment(word)
 
 	if len(window) >= (wlen * 2) + 1:
 		fx.updateTally(window[wlen:wlen+1][0])
 		fx.decrement(window.pop(0))
 
-fx.report()
-fx.save('test')
+		# Part 2: Evaluate against human judgementes
+
+fx.setScheme(wscheme)
+humanJudgements = []
+modelResults = []
+
+for w1, w2, sim in tuple([x.strip('\n').split(',') for x in human.readlines()]):
+
+        fx.reportTop10(w1)
+        fx.reportTop10(w2)
+        cDist = fx.getCosineDistance(w1, w2)
+        print('{},{}:{}'.format(w1, w2, cDist))
+
+        cDist = fx.getCosineDistance(w1, w2)
+
+        humanJudgements.append(sim)
+        modelResults.append(cDist)
+
+rho, pval = spearmanr(humanJudgements, modelResults)
+#print('Correlation:{}'.format(rho))
