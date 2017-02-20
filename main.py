@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-	# Modules & Settings
+		# Modules & Settings
 
 import sys
 import nltk
@@ -13,9 +13,9 @@ wscheme = sys.argv[2].upper()
 human   = open(sys.argv[3], 'r')
 output  = sys.argv[4]
 
-			# Main
+			# Main 
 
-punc = [',', '.', '?', '!', '$', '-', '/', '\\', '(', ')', ':', '"', '\''] 
+punc = [',', '.', '?', '!', '$', '-', '/', '\\', '(', ')', ':', '"', '\'', '\'\'', '``', '--', ';'] 
 
 words, vocabSize, corpusSize = rc.prepareSample('fbrown', punc)
 fx = rc.featureExtractor(vocabSize)
@@ -35,7 +35,7 @@ for i, word in enumerate(words, 1):
 		fx.updateTally(window[wlen:wlen+1][0])
 		fx.decrement(window.pop(0))
 
-		# Part 2: Evaluate against human judgementes
+		# Part 2: Evaluate against human judgements
 
 fx.setScheme(wscheme)
 humanJudgements = []
@@ -46,12 +46,12 @@ for w1, w2, sim in tuple([x.strip('\n').split(',') for x in human.readlines()]):
         fx.reportTop10(w1)
         fx.reportTop10(w2)
         cDist = fx.getCosineDistance(w1, w2)
-        print('{},{}:{}'.format(w1, w2, cDist))
-
-        cDist = fx.getCosineDistance(w1, w2)
 
         humanJudgements.append(sim)
         modelResults.append(cDist)
 
-#rho, pval = spearmanr(humanJudgements, modelResults)
-#print('Correlation:{}'.format(rho))
+        print('{},{}:{}'.format(w1, w2, cDist))
+
+rho, pval = spearmanr(humanJudgements, modelResults)
+print('Correlation:{}'.format(rho))
+print('P-value:{}'.format(pval))

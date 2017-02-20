@@ -32,16 +32,9 @@ def prepareSample(sample, punc):
 		if sample == 'fbrown':
 			words = list(nltk.corpus.brown.words())
 
-	cleaned = [preprocess(x, punc) for x in words]
+	cleaned = [x.lower() for x in words if x not in punc]
 	
 	return cleaned, len(set(cleaned)), len(cleaned)
-
-def preprocess(raw, punc):
-
-	if raw in punc:
-		return None
-
-	return raw.lower()
 
 def memoizePPMIterms(iArray):
 
@@ -86,7 +79,6 @@ class featureExtractor():
 		self.tally[tcode][tcode] -= 1
 
 	def report(self, target=None):
-
 		for code, word in enumerate(self.key.decodings):
 			print('Reporting collocation frequencies for: '+word)
 			for coloCode, coloFreq in enumerate(self.tally.data[code]):
@@ -95,7 +87,16 @@ class featureExtractor():
 
 	def reportTop10(self, word):
 		code = self.key.getEncoding(word)
-		#print('Reporting top 10 for "{}" (code == {})'.format(word, code))
+		if self.wscheme == 'FREQ':
+			relVec = self.tally[code].tolist()
+		else:
+			relVec = getPPMIVec(self.tally, code, self.sum_ij, self.normalizedDvec_i, self.normalizedDvec_j)
+		
+		zipped    = list(zip(relVec, self.key.decodings))
+		decSorted = sorted(zipped, key=lambda x: x[0], reverse=True)
+		print('Reporting top 10 for "{}" (code == {})'.format(word, code))
+		for i in range(0, 10):
+			print(i, decSorted[i][0], decSorted[i][1])
 
 	def setScheme(self, wscheme):
 		if wscheme not in  ['FREQ', 'PMI']:
