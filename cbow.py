@@ -1,9 +1,12 @@
 #!/usr/bin/python3
 
 		# Modules & Settings
-#import cbow
+
 import sys
-import resources as rc
+import pdb
+import nltk
+from gensim.models.word2vec import *
+from scipy.stats.stats import spearmanr
 
 wlen    = int(sys.argv[1])
 human   = open(sys.argv[2], 'r')
@@ -13,19 +16,31 @@ output  = sys.argv[3]
 
 punc = [',', '.', '?', '!', '$', '-', '/', '\\', '(', ')', ':', '"', '\'', '\'\'', '``', '--', ';'] 
 
-words, vocabSize, corpusSize = rc.prepareSample('fgetty', punc)
+print('Reading in Brown sentences... ')
+sents =  list(nltk.corpus.brown.sents()) 
+cleaned = [[word.lower() for word in sent if word not in punc] for sent in sents]
 
-		# Part 1: Build Model
+pdb.set_trace()
 
-sys.exit(0)
 
-		# Part 2: Evaluate against human judgements
+		#  Train model
+
+print('Training word2vec model... ')
+model = Word2Vec(cleaned,size=100,window=wlen,min_count=1,workers=1) 
+
+		#  Evaluate against human judgements
 
 humanJudgements = []
 modelResults = []
 
-for w1, w2, sim in tuple([x.strip('\n').split(',') for x in human.readlines()]):
-	pass
+for w1, w2, hsim in tuple([x.strip('\n').split(',') for x in human.readlines()]):
+
+	msim = model.similarity(w1, w2)
+
+	humanJudgements.append(hsim)
+	modelResults.append(msim)
+
+	print('{},{}:{}'.format(w1, w2, msim))
 
 rho, pval = spearmanr(humanJudgements, modelResults)
 print('Correlation:{}'.format(rho))
