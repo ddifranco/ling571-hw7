@@ -10,6 +10,7 @@ import scipy.spatial
 import gc
 
 def prepareSample(sample, punc): 
+
 	validSamples = ['sgetty', 'fgetty', 'sbrown', 'mbrown', 'fbrown']
 
 	if sample not in validSamples:
@@ -42,52 +43,33 @@ def preprocess(raw, punc):
 
 	return raw.lower()
 
-def derivePPMI(iArray, oArray, key=None):
+def memoizePPMIterms(iArray):
 
-	#pdb.set_trace()
-
-	gc.collect()
+	print('Memoizing reusable terms')
 
 	sum_ij = np.sum(iArray)		#Sum of matrix
 	sum_i  = np.sum(iArray, 0)	#Vector of rowsums
 	sum_j  = np.sum(iArray, 1)	#Vector of colsums
 
-	pdb.set_trace()
+	normalizedDvec_i = np.log2(sum_i)  - np.log2(sum_ij)
+	normalizedDvec_j = np.log2(sum_j)  - np.log2(sum_ij)
 
-	oArray = np.log2(iArray) - np.log2(sum_ij)
-	oArray = (oArray - (np.log2(sum_i) - np.log2(sum_ij))).T
-	oArray = (oArray - (np.log2(sum_j) - np.log2(sum_ij))).T
+	return sum_ij, normalizedDvec_i, normalizedDvec_j
 
-	#num    = np.log2(iArray) - np.log2(sum_ij)			
-	#dterm1 = np.log2(sum_i)  - np.log2(sum_ij)
-	#dterm2 = np.log2(sum_j)  - np.log2(sum_ij)
+def getPPMIVec(iArray, code, sum_ij, normalizedDvec_i, normalizedDvec_j, key=None):
 
-	#Version that takes uses copies
-	#num    = np.log2(iArray) - np.log2(sum_ij)			
-	#dterm1 = np.log2(sum_i)  - np.log2(sum_ij)
-	#dterm2 = np.log2(sum_j)  - np.log2(sum_ij)
+	iVec = iArray[code]
 
-	#Version that takes log at the end
-	#num    = iArray / sum_ij			
-	#dterm1 = sum_i  / sum_ij
-	#dterm2 = sum_j  / sum_ij
-	#pmi = np.log2(((num / dterm1).T / dterm2).T)
-
-	#pmi = ((num - dterm1).T - dterm2).T
-	#ppmi =  np.maximum(pmi, 0)
-	#return np.nan_to_num(ppmi)		#Based on spot-checks, nans are due to division by zero somewhere along the chain, and may be replaced with zeros
-
-	oArray = np.maximum(oArray, 0)
-	oArray = np.nan_to_num(oArray)
-	
-	return oArray
+	numVec = np.log2(iArray[code])  - np.log2(sum_ij)			
+	pmi = (numVec - normalizedDvec_i) - normalizedDvec_j[code]
+	ppmi =  np.maximum(pmi, 0)
+	return np.nan_to_num(ppmi)		#Based on spot-checks, nans are due to division by zero somewhere along the chain, and may be replaced with zeros
 
 class featureExtractor(): 
 
 	def __init__(self, vsize):
 
 		self.tally = np.zeros((vsize, vsize), np.uint32)
-		self.ppmi  = np.zeros((vsize, vsize), np.float32)
 		self.cvec  = np.zeros((vsize), np.uint32)
 		self.key   = st.strMap()
 
@@ -122,12 +104,19 @@ class featureExtractor():
 			sys.exit(0)
 
 		if wscheme == 'PMI':
-			self.weights = derivePPMI(self.tally, self.ppmi, self.key)
-		else:
-			self.weights = self.tally
+			self.sum_ij, self.normalizedDvec_i, self.normalizedDvec_j = memoizePPMIterms(self.tally)
+		
+		self.wscheme = wscheme
 
 	def getCosineDistance(self, word1, word2):
 		code1 = self.key.getEncoding(word1)
 		code2 = self.key.getEncoding(word2)
-		csim = 1 - scipy.spatial.distance.cosine(self.weights[code1], self.weights[code2])
+		if self.wscheme == 'FREQ':
+			vec1 = self.tally[code1]
+			vec2 = self.tally[code2]
+		if self.wscheme == 'PMI':
+			vec1 = getPPMIVec(self.tally, code1, self.sum_ij, self.normalizedDvec_i, self.normalizedDvec_j)
+			vec2 = getPPMIVec(self.tally, code2, self.sum_ij, self.normalizedDvec_i, self.normalizedDvec_j)
+
+		csim = 1 - scipy.spatial.distance.cosine(vec1, vec2)
 		return csim

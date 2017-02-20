@@ -53,5 +53,5 @@ for w1, w2, sim in tuple([x.strip('\n').split(',') for x in human.readlines()]):
         humanJudgements.append(sim)
         modelResults.append(cDist)
 
-rho, pval = spearmanr(humanJudgements, modelResults)
+#rho, pval = spearmanr(humanJudgements, modelResults)
 #print('Correlation:{}'.format(rho))

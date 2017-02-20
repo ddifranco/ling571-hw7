@@ -12,6 +12,14 @@ r3 = [2, 2, 9 , 5]
 r4 = [3, 6, 8 , 2]
 
 x = np.array([r1, r2, r3, r4])
+
+sum_ij, normalizedDvec_i, normalizedDvec_j = rc.memoizePPMIterms(x)
+
+t = rc.getPPMIVec(x, 2, sum_ij, normalizedDvec_i, normalizedDvec_j)
+
+pdb.set_trace()
+sys.exit(0)
+
 o = np.zeros((4, 4), np.float32)
 y =  rc.derivePPMI(x, o)
 

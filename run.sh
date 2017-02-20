@@ -3,6 +3,7 @@
 #HUMAN='/dropbox/16-17/571/hw7/mc_similarity.txt'
 #HUMAN='hsamp.txt'
 HUMAN='mc_similarity.txt'
+#HUMAN='toy.txt'
 SWINDOW=2
 LWINDOW=10
 
