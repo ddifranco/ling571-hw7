@@ -20,9 +20,6 @@ print('Reading in Brown sentences... ')
 sents =  list(nltk.corpus.brown.sents()) 
 cleaned = [[word.lower() for word in sent if word not in punc] for sent in sents]
 
-pdb.set_trace()
-
-
 		#  Train model
 
 print('Training word2vec model... ')
